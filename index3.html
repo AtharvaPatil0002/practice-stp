@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ultimate Animation Showcase</title>
+
+<!-- Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.5/bundled/lenis.min.js"></script>
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
+body{background:#0e0e0e;color:white;overflow-x:hidden;}
+section{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:100px 10%;}
+h1{font-size:clamp(40px,8vw,90px);}
+.hero{position:relative;text-align:center;}
+.progress{
+position:fixed;top:0;left:0;height:4px;background:#00f5ff;width:0%;z-index:999;
+}
+.btn{
+padding:15px 40px;background:white;color:black;border:none;border-radius:40px;
+cursor:pointer;position:relative;margin-top:30px;
+}
+.card{
+width:300px;height:300px;background:#1c1c1c;border-radius:20px;
+display:flex;align-items:center;justify-content:center;
+margin:20px;transition:0.2s;
+}
+.cards{display:flex;flex-wrap:wrap;justify-content:center;}
+.marquee{
+white-space:nowrap;overflow:hidden;width:100%;
+font-size:40px;margin-top:50px;
+}
+.marquee span{
+display:inline-block;padding-right:50px;
+}
+.glass{
+backdrop-filter:blur(10px);
+background:rgba(255,255,255,0.05);
+padding:50px;border-radius:20px;margin-top:50px;
+}
+canvas{
+position:fixed;top:0;left:0;z-index:-1;
+}
+.cursor{
+width:20px;height:20px;border:2px solid white;border-radius:50%;
+position:fixed;pointer-events:none;z-index:1000;
+}
+.loader{
+position:fixed;width:100%;height:100%;background:black;
+display:flex;justify-content:center;align-items:center;
+z-index:2000;font-size:30px;
+}
+</style>
+</head>
+<body>
+
+<div class="loader">Loading...</div>
+<div class="progress"></div>
+<div class="cursor"></div>
+<canvas id="bg"></canvas>
+
+<section class="hero">
+<h1 class="split">ULTIMATE ANIMATION</h1>
+<button class="btn">Magnetic Button</button>
+<div class="marquee"><span>SCROLL • ANIMATE • CREATE • </span></div>
+</section>
+
+<section>
+<div class="glass" data-aos="fade-up">
+Glassmorphism Section
+</div>
+
+<div class="cards">
+<div class="card">Tilt Me</div>
+<div class="card">Tilt Me</div>
+<div class="card">Tilt Me</div>
+</div>
+</section>
+
+<script>
+AOS.init();
+
+// Smooth Scroll (Lenis)
+const lenis = new Lenis();
+function raf(time){lenis.raf(time);requestAnimationFrame(raf);}
+requestAnimationFrame(raf);
+
+// Scroll Progress
+window.addEventListener("scroll",()=>{
+let scrolled = (window.scrollY/(document.body.scrollHeight-window.innerHeight))*100;
+document.querySelector(".progress").style.width = scrolled+"%";
+});
+
+// Split Text Animation (GSAP)
+let text = document.querySelector(".split");
+text.innerHTML = text.textContent.split("").map(letter=>`<span>${letter}</span>`).join("");
+gsap.from(".split span",{
+opacity:0,y:50,stagger:0.05,duration:1,ease:"power4.out"
+});
+
+// Magnetic Button
+const btn=document.querySelector(".btn");
+btn.addEventListener("mousemove",e=>{
+const rect=btn.getBoundingClientRect();
+const x=e.clientX-rect.left-rect.width/2;
+const y=e.clientY-rect.top-rect.height/2;
+gsap.to(btn,{x:x*0.3,y:y*0.3});
+});
+btn.addEventListener("mouseleave",()=>gsap.to(btn,{x:0,y:0}));
+
+// 3D Tilt Cards
+document.querySelectorAll(".card").forEach(card=>{
+card.addEventListener("mousemove",e=>{
+let x=(e.offsetX/card.clientWidth-0.5)*20;
+let y=(e.offsetY/card.clientHeight-0.5)*20;
+card.style.transform=`rotateY(${x}deg) rotateX(${-y}deg)`;
+});
+card.addEventListener("mouseleave",()=>card.style.transform="rotateY(0) rotateX(0)");
+});
+
+// Anime.js Marquee
+anime({
+targets:'.marquee span',
+translateX:[0,-1000],
+duration:10000,
+loop:true,
+easing:"linear"
+});
+
+// Three.js Background
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);
+const renderer=new THREE.WebGLRenderer({canvas:document.getElementById("bg"),alpha:true});
+renderer.setSize(window.innerWidth,window.innerHeight);
+camera.position.z=5;
+const geometry=new THREE.SphereGeometry(0.1,16,16);
+const material=new THREE.MeshBasicMaterial({color:0xffffff});
+for(let i=0;i<100;i++){
+const sphere=new THREE.Mesh(geometry,material);
+sphere.position.set((Math.random()-0.5)*10,(Math.random()-0.5)*10,(Math.random()-0.5)*10);
+scene.add(sphere);
+}
+function animate(){
+requestAnimationFrame(animate);
+scene.rotation.y+=0.001;
+renderer.render(scene,camera);
+}
+animate();
+
+// Loader
+window.addEventListener("load",()=>{
+gsap.to(".loader",{opacity:0,duration:1,onComplete:()=>document.querySelector(".loader").style.display="none"});
+});
+
+// Custom Cursor
+const cursor=document.querySelector(".cursor");
+window.addEventListener("mousemove",e=>{
+gsap.to(cursor,{x:e.clientX,y:e.clientY,duration:0.1});
+});
+</script>
+
+</body>
+</html>
